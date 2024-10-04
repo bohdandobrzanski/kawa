@@ -9,7 +9,8 @@ const successMessage = document.getElementById('success-message');
 
 // Parametry kawy i mleka
 let selectedMilk = null;
-let milkFoamLevel = 0;
+let selectedEspresso = 0;
+let selectedMilkAmount = 0;
 let targetCoffee = null;
 
 // Dostępne rodzaje kaw i mleka
@@ -27,6 +28,13 @@ const milkTypes = [
     { name: 'Migdałowe', foamable: false }
 ];
 
+const milkAmounts = [
+    { name: '1/3 szklanki', value: 1 },
+    { name: '1/2 szklanki', value: 1.5 },
+    { name: '2/3 szklanki', value: 2 },
+    { name: 'pełna szklanka', value: 3 }
+];
+
 // Sterowanie grą i logika
 function startGame() {
     menu.style.display = 'none';
@@ -38,7 +46,8 @@ function startGame() {
 
 function resetGame() {
     selectedMilk = null;
-    milkFoamLevel = 0;
+    selectedEspresso = 0;
+    selectedMilkAmount = 0;
     targetCoffee = null;
     gameOverScreen.style.display = 'none';
     canvas.style.display = 'block';
@@ -49,10 +58,22 @@ function generateCoffeeOrder() {
     alert(`Klient zamówił: ${targetCoffee.name}`);
 }
 
+// Wybór ilości espresso
+function selectEspresso(amount) {
+    selectedEspresso = amount;
+    alert(`Wybrano ilość espresso: ${selectedEspresso}`);
+}
+
 // Wybór mleka
 function selectMilk(milkIndex) {
     selectedMilk = milkTypes[milkIndex];
     alert(`Wybrano mleko: ${selectedMilk.name}`);
+}
+
+// Wybór ilości mleka
+function selectMilkAmount(amountIndex) {
+    selectedMilkAmount = milkAmounts[amountIndex].value;
+    alert(`Wybrano ilość mleka: ${milkAmounts[amountIndex].name}`);
 }
 
 // Spienianie mleka
@@ -71,16 +92,19 @@ function frothMilk() {
 
 // Przygotowanie kawy
 function prepareCoffee() {
-    if (!selectedMilk) {
-        alert('Najpierw wybierz mleko!');
+    if (!selectedMilk || selectedEspresso === 0 || selectedMilkAmount === 0) {
+        alert('Najpierw wybierz wszystkie składniki!');
         return;
     }
     if (!targetCoffee) {
         alert('Brak zamówienia do przygotowania.');
         return;
     }
-    const isMilkAmountCorrect = milkFoamLevel >= targetCoffee.foam - 0.5 && milkFoamLevel <= targetCoffee.foam + 0.5;
-    if (isMilkAmountCorrect) {
+    const isEspressoCorrect = selectedEspresso === targetCoffee.espresso;
+    const isMilkAmountCorrect = selectedMilkAmount === targetCoffee.milk;
+    const isFoamCorrect = milkFoamLevel >= targetCoffee.foam - 0.5 && milkFoamLevel <= targetCoffee.foam + 0.5;
+
+    if (isEspressoCorrect && isMilkAmountCorrect && isFoamCorrect) {
         successMessage.innerText = `Kawa ${targetCoffee.name} została poprawnie przygotowana!`;
         gameOverScreen.style.display = 'block';
     } else {
@@ -97,10 +121,16 @@ function drawGame() {
     if (selectedMilk) {
         ctx.fillText(`Wybrane mleko: ${selectedMilk.name}`, 20, 80);
     }
-    if (targetCoffee) {
-        ctx.fillText(`Zamówienie: ${targetCoffee.name}`, 20, 120);
+    if (selectedEspresso) {
+        ctx.fillText(`Ilość espresso: ${selectedEspresso}`, 20, 120);
     }
-    ctx.fillText(`Poziom spienienia mleka: ${milkFoamLevel.toFixed(1)}`, 20, 160);
+    if (selectedMilkAmount) {
+        ctx.fillText(`Ilość mleka: ${milkAmounts.find(m => m.value === selectedMilkAmount).name}`, 20, 160);
+    }
+    if (targetCoffee) {
+        ctx.fillText(`Zamówienie: ${targetCoffee.name}`, 20, 200);
+    }
+    ctx.fillText(`Poziom spienienia mleka: ${milkFoamLevel.toFixed(1)}`, 20, 240);
 }
 
 function gameLoop() {
@@ -109,10 +139,26 @@ function gameLoop() {
 }
 
 // HTML elementy
+const espressoSelectionButtons = [1, 2].map((amount) => {
+    const button = document.createElement('button');
+    button.innerText = `${amount} shot${amount > 1 ? 'y' : ''} espresso`;
+    button.onclick = () => selectEspresso(amount);
+    document.body.appendChild(button);
+    return button;
+});
+
 const milkSelectionButtons = milkTypes.map((milk, index) => {
     const button = document.createElement('button');
     button.innerText = milk.name;
     button.onclick = () => selectMilk(index);
+    document.body.appendChild(button);
+    return button;
+});
+
+const milkAmountButtons = milkAmounts.map((amount, index) => {
+    const button = document.createElement('button');
+    button.innerText = amount.name;
+    button.onclick = () => selectMilkAmount(index);
     document.body.appendChild(button);
     return button;
 });
@@ -131,3 +177,4 @@ const startButton = document.createElement('button');
 startButton.innerText = 'Rozpocznij grę';
 startButton.onclick = startGame;
 document.body.appendChild(startButton);
+
